@@ -74,3 +74,5 @@ typing-extensions>=4.9.0
 youtube-transcript-api
 duckduckgo_search
 pptx
+matplotlib
+seaborn
