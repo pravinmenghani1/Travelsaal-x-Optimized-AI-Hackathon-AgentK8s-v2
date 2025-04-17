@@ -72,3 +72,4 @@ packaging>=23.2
 typing-extensions>=4.9.0
 
 youtube-transcript-api
+duckduckgo_search
