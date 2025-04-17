@@ -1,0 +1,75 @@
+# app/run_agentk8s.py
+
+import sys
+import os
+import streamlit as st
+from agents.agentk8s import AgentK8s
+from agents.pdf_generator import generate_pdf
+
+# Ensure the root directory is in the path so the agents module can be found
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+print("Current sys.path:", sys.path)
+
+st.title("AgentK8s - EKS Operational Review Agent")
+
+# Create an instance of AgentK8s. You can also pass custom tools here.
+agent = AgentK8s()
+
+st.header("🧠 Provide EKS Environment Details")
+
+# Select the area of focus. You can extend these categories as needed.
+category = st.selectbox("Select an area of focus", ["Cluster Health", "Cost Optimization", "Security", "Monitoring", "CI/CD"])
+
+# Create a dictionary to store answers from the user.
+user_answers = {}
+
+if category == "Cluster Health":
+    user_answers['cluster_status'] = st.text_input("How is the health of your EKS cluster?")
+    user_answers['node_status'] = st.text_input("Are all nodes reporting healthy status?")
+    # Add additional questions as required
+
+elif category == "Cost Optimization":
+    user_answers['cost_trends'] = st.text_input("What trends are you observing in your cost reports?")
+    user_answers['unused_resources'] = st.text_input("Are there unused resources that can be optimized?")
+    # Additional cost related questions
+
+elif category == "Security":
+    user_answers['access_policies'] = st.text_input("How are your security policies managed?")
+    user_answers['incident_history'] = st.text_input("Have you experienced any security incidents lately?")
+    # More security questions
+    
+elif category == "Monitoring":
+    user_answers['monitoring_tool'] = st.text_input("How are your monitoring your workload today?")
+    user_answers['monitoring_issues'] = st.text_input("Have you experienced any issues with current monitoring tools?")
+    user_answers['monitoring_tools'] = st.text_input("What monitoring tools (e.g., Prometheus, CloudWatch) are in use?")
+    user_answers['alerting'] = st.text_input("Do you have alerting configured for all critical metrics?")
+    user_answers['dashboard_coverage'] = st.text_input("Do your dashboards cover node, pod, and app metrics?")
+    # More monitoring questions
+    
+elif category == "CI/CD":
+    user_answers['ci_cd_pipelines'] = st.text_input("How are your CI/CD pipelines configured?")
+    user_answers['deployment_frequency'] = st.text_input("How often are your deployments happening?")
+    # More monitoring questions
+
+# You can add more categories similarly...
+
+if st.button("Run AgentK8s"):
+    if any(user_answers.values()):
+        with st.spinner("Analyzing..."):
+            for key, answer in user_answers.items():
+                if answer:
+                    agent.add_user_message(f"{key.replace('_', ' ').capitalize()}: {answer}")
+
+            final_output = agent("Based on the above information, generate a prescriptive action plan for improving EKS operations.")
+            report = agent.generate_prescriptive_report()
+
+            st.markdown(report)
+
+            try:
+                pdf_file = generate_pdf(report)
+                with open(pdf_file, "rb") as f:
+                    st.download_button("\U0001F4C4 Download PDF Report", data=f, file_name=pdf_file)
+            except Exception as e:
+                st.error(f"PDF generation failed: {str(e)}")
+    else:
+        st.warning("Please provide some details for the selected area.")

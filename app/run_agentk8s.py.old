@@ -1,0 +1,74 @@
+import sys
+import os
+#sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+#sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+
+import streamlit as st
+from app.ui_components import display_risks_chart, display_recommendation_links
+from app.report_utils import generate_pdf
+from agents.agentk8s import AgentK8s
+from dotenv import load_dotenv
+load_dotenv()
+import io
+
+load_dotenv()
+st.set_page_config(page_title="AgentK8s – EKS Review", layout="wide")
+
+# Session init
+if "agent" not in st.session_state:
+    st.session_state.agent = AgentK8s()
+    st.session_state.objectives = None
+    st.session_state.issues = []
+    st.session_state.risks = []
+    st.session_state.recommendations = []
+    st.session_state.step = "objective"
+
+agent = st.session_state.agent
+
+# Step 1: Capture Objectives
+if st.session_state.step == "objective":
+    st.title("🤖 AgentK8s – EKS Operational Review")
+    objective = st.text_input("Describe your EKS review goals (e.g., performance issues, cost optimization)...")
+    if objective:
+        st.session_state.objectives = objective
+        agent.set_objective(objective)
+        st.success("Thanks! Now describe each problem you're facing one-by-one.")
+        st.session_state.step = "issues"
+        st.rerun()
+
+# Step 2: Capture Issues
+elif st.session_state.step == "issues":
+    st.header("🧩 EKS Issues")
+    issue = st.chat_input("What’s one issue you’re facing in EKS (e.g., pending pods, high CPU)...")
+    if issue:
+        response = agent.process_input(issue)
+        st.session_state.issues.append(issue)
+        st.session_state.risks = agent.risks
+        st.session_state.recommendations = agent.recommendations
+        st.chat_message("user").write(issue)
+        st.chat_message("assistant").write(response)
+
+    if st.button("✅ Generate Final Report"):
+        st.session_state.step = "report"
+        st.rerun()
+
+# Step 3: Display Report
+elif st.session_state.step == "report":
+    st.header("📊 EKS Operational Report")
+
+    st.subheader("🚨 Risks Identified")
+    display_risks_chart(st.session_state.risks)
+
+    st.subheader("✅ Recommendations")
+    display_recommendation_links(st.session_state.recommendations)
+
+    # Generate PDF
+    summary = agent.generate_prescriptive_report(
+    st.session_state.objectives,
+    st.session_state.issues
+    )
+    pdf_data = generate_pdf(summary)
+    st.download_button("📄 Download PDF Report", pdf_data, "eks_review_report.pdf", mime="application/pdf")
+

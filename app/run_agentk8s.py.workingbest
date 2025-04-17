@@ -1,0 +1,59 @@
+import sys
+import os
+import streamlit as st
+from agents.agentk8s import AgentK8s
+from agents.pdf_generator import generate_pdf
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+st.title("AgentK8s - EKS Operational Review Agent")
+
+agent = AgentK8s()
+
+st.header("🧠 Provide EKS Environment Details")
+
+user_answers = {}
+
+st.subheader("Cluster Health")
+user_answers['cluster_status'] = st.text_input("How is the health of your EKS cluster?")
+user_answers['node_status'] = st.text_input("Are all nodes reporting healthy status?")
+
+st.subheader("Cost Optimization")
+user_answers['cost_trends'] = st.text_input("What trends are you observing in your cost reports?")
+user_answers['unused_resources'] = st.text_input("Are there unused resources that can be optimized?")
+
+st.subheader("Security")
+user_answers['access_policies'] = st.text_input("How are your security policies managed?")
+user_answers['incident_history'] = st.text_input("Have you experienced any security incidents lately?")
+
+st.subheader("Monitoring")
+user_answers['monitoring_tools'] = st.text_input("Which monitoring tools are in use (e.g., Prometheus, CloudWatch)?")
+user_answers['alerting_config'] = st.text_input("How are alerts configured for cluster performance?")
+
+st.subheader("CI/CD")
+user_answers['pipeline_description'] = st.text_input("Describe your CI/CD pipeline.")
+user_answers['pipeline_issues'] = st.text_input("Have you faced any deployment issues recently?")
+
+st.subheader("Other Details")
+user_answers['additional_notes'] = st.text_area("Anything else you'd like to share?")
+
+if st.button("Run AgentK8s"):
+    if any(user_answers.values()):
+        with st.spinner("Analyzing..."):
+            for key, answer in user_answers.items():
+                if answer:
+                    agent.add_user_message(f"{key.replace('_', ' ').capitalize()}: {answer}")
+
+            final_output = agent("Based on the above information, generate a prescriptive action plan for improving EKS operations.")
+            report = agent.generate_prescriptive_report()
+
+            st.markdown(report)
+
+            try:
+                pdf_file = generate_pdf(report)
+                with open(pdf_file, "rb") as f:
+                    st.download_button("\U0001F4C4 Download PDF Report", data=f, file_name=pdf_file)
+            except Exception as e:
+                st.error(f"PDF generation failed: {str(e)}")
+    else:
+        st.warning("Please provide some details across the categories.")
