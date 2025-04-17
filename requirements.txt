@@ -85,3 +85,4 @@ duckduckgo_search>=7.2.1
 python-pptx>=0.6.21
 matplotlib>=3.9.2
 seaborn>=0.13.2
+fpdf
