@@ -76,3 +76,12 @@ duckduckgo_search
 pptx
 matplotlib
 seaborn
+streamlit>=1.31.0
+openai>=1.0.0
+fpdf>=1.7.2
+python-dotenv>=0.19.0
+youtube_transcript_api>=1.0.3
+duckduckgo_search>=7.2.1
+python-pptx>=0.6.21
+matplotlib>=3.9.2
+seaborn>=0.13.2
